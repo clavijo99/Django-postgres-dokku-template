@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Home</title>
+  <style>
+    body {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      background-color: white;
+    }
+
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-content: center;
+      align-items: center;
+      width: 100%;
+      height: 100vh;
+      margin: 0;
+      color: black;
+    }
+
+    .loading-dots {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      align-content: center;
+      font-size: 24px;
+    }
+
+    .loading-dots span {
+      opacity: 0;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0% {
+        opacity: 0;
+      }
+      50% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1> {{ title }} running </h1>
+  <div class="loading-dots">
+  </div>
+</div>
+
+<script>
+  const dotsContainer = document.querySelector('.loading-dots');
+
+  function animateDots() {
+    let dots = '';
+    let dotCount = 0;
+
+    function addDot() {
+      dots += '.';
+      dotsContainer.textContent = dots;
+
+      if (dotCount < 5) {
+        dotCount++;
+        setTimeout(addDot, 200);
+      } else {
+        setTimeout(resetDots, 2000);
+      }
+    }
+
+    function resetDots() {
+      dots = '';
+      dotsContainer.innerHTML = '&nbsp;';
+      dotCount = 0;
+      setTimeout(addDot, 200);
+    }
+
+    addDot();
+  }
+
+  animateDots();
+</script>
+</body>
+</html>

@@ -6,7 +6,7 @@ SECRET_KEY = 'p3gm=o9o+_r(5*o$$kn#h*8#n1r)aquf^^nm_v5u0pn^qa$=4*'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
-ALLOWED_HOSTS = [ "http://0.0.0.0:8000" , '*']
+ALLOWED_HOSTS = [ "http://0.0.0.0:8000/" , '*']
 CSRF_TRUSTED_ORIGINS = ["http://0.0.0.0:8000"]
 
 
