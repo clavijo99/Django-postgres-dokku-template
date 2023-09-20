@@ -22,11 +22,14 @@ from django.urls import path, include
 from django.conf.urls.i18n import i18n_patterns
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from main.urls import apiurls as main_api_urls
+from users.urls import api_urls as user_api_urls
+
 
 
 api_urls = ([
     path('main/', include(main_api_urls, namespace='main')),
-], 'api')
+                path('user/', include(user_api_urls, namespace='user')),
+            ], 'api')
 
 
 urlpatterns = [

@@ -1,0 +1,66 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center vh-100">
+  <div class="d-flex flex-column justify-content-center gap-4 p-4 text-center">
+    <h2>¡Bienvenido!</h2>
+    <p>Su cuenta  ha sido activada correctamente, ya puede ingresar a la aplicación</p>
+    <div class="ellipse"></div>
+  </div>
+</div>
+
+<style>
+  .ellipse {
+    width: 100%;
+    height: 10px;
+    background-color: #E0E0E0;
+    border-radius: 50%;
+    filter: blur(10px);
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/tsparticles-confetti@2.9.3/tsparticles.confetti.bundle.min.js"></script>
+<script>
+  const count = 200,
+    defaults = {
+      origin: {y: 0.7},
+    };
+
+  function fire(particleRatio, opts) {
+    confetti(
+      Object.assign({}, defaults, opts, {
+        particleCount: Math.floor(count * particleRatio),
+      })
+    );
+  }
+
+  fire(0.25, {
+    spread: 26,
+    startVelocity: 55,
+  });
+
+  fire(0.2, {
+    spread: 60,
+  });
+
+  fire(0.35, {
+    spread: 100,
+    decay: 0.91,
+    scalar: 0.8,
+  });
+
+  fire(0.1, {
+    spread: 120,
+    startVelocity: 25,
+    decay: 0.92,
+    scalar: 1.2,
+  });
+
+  fire(0.1, {
+    spread: 120,
+    startVelocity: 45,
+  });
+</script>
+<canvas id="my-canvas"></canvas>
+
+{% endblock %}

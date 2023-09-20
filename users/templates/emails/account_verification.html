@@ -1,0 +1,55 @@
+{% load i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% translate 'Activación de cuenta CQTX'%}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+        h1 {
+            font-size: 24px;
+        }
+        p {
+            font-size: 18px;
+        }
+        a {
+            display: inline-block;
+            font-size: 18px;
+            text-decoration: none;
+            background-color: #3498db;
+            color: #fff;
+            padding: 10px 20px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+        a:visited {
+          color: #fff;
+          background-color: transparent;
+          text-decoration: none;
+        }
+        .ii a[href] {
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>{% translate 'Activación de cuenta' %}</h1>
+        <p>{% translate 'Hola' %} {{ first_name }},</p>
+        <p>{% translate 'Gracias por registrarte. Para activar tu cuenta, haz clic en el siguiente enlace:' %}</p>
+        <a href="{{ activation_link }}">{% translate 'Activar mi cuenta' %}</a>
+        <p>{% translate 'Si no solicitaste la creación de esta cuenta, ignora este correo electrónico.' %}</p>
+    </div>
+</body>
+</html>

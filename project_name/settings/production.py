@@ -7,6 +7,8 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['.project_name.com']
 SECRET_KEY = get_secret('DJANGO_SECRET_KEY')
+PASSWORD_RESET_EXPIRE_DAYS = 1
+
 
 if get_secret('DATABASE_URL'):
     import dj_database_url

@@ -40,11 +40,12 @@ DEPENDENCIES_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 ]
 
 PROJECT_APPS = [
     'main',
-    'users',
+    'user',
 ]
 
 ADDONS = [
@@ -205,6 +206,8 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+SITE_ID = 1
+
 
 LANGUAGES = [
     ("es", _("Spanish")),
@@ -222,7 +225,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Email Config
-EMAIL_SUBJECT_PREFIX = '[project_name] '
+EMAIL_SUBJECT_PREFIX = '[project_name]'
 DEFAULT_FROM_EMAIL = 'No Reply <no-reply@project_name.com>'
 SERVER_EMAIL = 'Server <server@project_name.com>'
 # ADMINS = [('Admin', 'admin@project_name.com')]
@@ -230,32 +233,6 @@ SERVER_EMAIL = 'Server <server@project_name.com>'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-ROOT_URLCONF = 'project_name.urls'
-AUTH_USER_MODEL = 'users.user'
+AUTH_USER_MODEL = 'user.user'
 
-
-
-
-SPECTACULAR_SETTINGS = {
-    'TITLE': ' API',
-    'DESCRIPTION': 'API Documentation',
-    'SERVE_PUBLIC': True,
-    'VERSION': '1.0.0',
-    'SERVE_PERMISSIONS': ['rest_framework.permissions.AllowAny'],
-    # Allows grouping APIs without considering the /api.py part
-    'SCHEMA_PATH_PREFIX': "/api.py",
-    'CAMELIZE_NAMES': True,
-    'SORT_OPERATIONS': True,
-    'SORT_OPERATION_PARAMETERS': True,
-    'COMPONENT_SPLIT_REQUEST': True,
-    'COMPONENT_SPLIT_PATCH': True,
-    'SWAGGER_UI_SETTINGS': {
-        "deepLinking": True,
-        "persistAuthorization": True,
-        "displayOperationId": False,
-        "operationsSorter": "alpha",
-        "tagsSorter": "alpha",
-        "filter": True,
-    },
-}
 
