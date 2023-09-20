@@ -9,14 +9,15 @@ https://docs.djangoproject.com/en/2.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
-
 import os
+from dotenv import load_dotenv
 from django.conf.global_settings import LANGUAGES as DJANGO_LANGUAGES
 from django.utils.translation import gettext_lazy as _
 
 
 from datetime import timedelta
 
+load_dotenv()
 
 
 ENVIRONMENT = os.environ.get('ENVIRONMENT', 'development')
@@ -41,6 +42,7 @@ DEPENDENCIES_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django.contrib.humanize',
 ]
 
 PROJECT_APPS = [
@@ -74,7 +76,9 @@ ROOT_URLCONF = 'project_name.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

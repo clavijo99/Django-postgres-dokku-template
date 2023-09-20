@@ -20,7 +20,7 @@ class User(AbstractUser):
         validators=[validators.validate_email],
         unique=True,
         error_messages={
-            'unique': 'A user with that email already exists.'
+            'unique': 'A account with that email already exists.'
         }
     )
     avatar = models.ImageField(upload_to='avatar/', null=True, blank=True)
@@ -41,7 +41,7 @@ class User(AbstractUser):
 
     @classmethod
     def generate_unique_username(cls, email: str) -> str:
-        # email user
+        # email account
         local_part = email.split('@')[0]
         username_base = re.sub(r'\W+', '', local_part).lower()
         username = username_base
@@ -53,22 +53,25 @@ class User(AbstractUser):
         return username
 
     def send_activation_email(self):
+        print('send email')
         if not self.is_active:
+            print('isnota')
             domain = Site.objects.get_current().domain
             activation_token = self.create_reset_token()
-            activation_link = f"{domain}/users/activate_account_success/?reset_token={activation_token}"
+            activation_link = f"{domain}/account/activate_account_success/?reset_token={activation_token}"
             subject = _("Activación de cuenta")
             html_message = render_to_string('emails/account_verification.html', {
                 'first_name': self.first_name,
                 'activation_link': activation_link
             })
-            send_mail(
+            emails = send_mail(
                 subject, '',
                 settings.DEFAULT_FROM_EMAIL,
                 [self.email],
                 fail_silently=False,
                 html_message=html_message
             )
+            print("sendddddd")
 
     def create_reset_token(self): # noqa
         payload = {
@@ -84,7 +87,7 @@ class User(AbstractUser):
             domain = Site.objects.get_current().domain
             reset_token = self.create_reset_token()
 
-            activation_link = f"{domain}/users/password-reset-confirm/?reset_token={reset_token}"
+            activation_link = f"{domain}/account/password-reset-confirm/?reset_token={reset_token}"
             subject = _("Restablecer Contraseña")
             html_message = render_to_string('emails/reset_password.html', {
                 'first_name': self.first_name,
@@ -98,7 +101,7 @@ class User(AbstractUser):
                 html_message=html_message)
 
     def save(self, *args, **kwargs):
-        # if user is new and not has username
+        # if account is new and not has username
         if self.pk is None:
             self.activation_token = get_random_string(128)
             self.is_active = False

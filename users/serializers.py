@@ -62,16 +62,16 @@ class UserLoginSerializer(serializers.Serializer):  # noqa
             raise serializers.ValidationError('Invalid credentials')
         if not user.is_verified:
             raise serializers.ValidationError('Account is not active yet.')
-        self.context['user'] = user
+        self.context['account'] = user
         return data
 
     def create(self, data):
-        refresh = RefreshToken.for_user(self.context['user'])
+        refresh = RefreshToken.for_user(self.context['account'])
         token = {
             'access': str(refresh.access_token),
             'refresh': str(refresh)
         }
-        return self.context['user'], token
+        return self.context['account'], token
 
 
 class UserLogoutSerializer(serializers.Serializer):  # noqa
@@ -79,14 +79,14 @@ class UserLogoutSerializer(serializers.Serializer):  # noqa
     auth_user = serializers.CharField()
 
     def validate(self, data):
-        if data['user'] != data['auth_user']:
+        if data['account'] != data['auth_user']:
             raise serializers.ValidationError('Invalid operation')
-        user = User.objects.get(username=data['user'])
-        self.context['user'] = user
+        user = User.objects.get(username=data['account'])
+        self.context['account'] = user
         return data
 
     def save(self):
-        RefreshToken.for_user(self.context['user'])
+        RefreshToken.for_user(self.context['account'])
 
 
 class ResetPasswordRequestSerializer(serializers.Serializer):  # noqa
@@ -114,7 +114,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):  # noqa
     def get_token(cls, user):
         token = super(CustomTokenObtainPairSerializer, cls).get_token(user)
         # Add custom claims
-        token["user"] = UserModelSerializer(user, many=False).data
+        token["account"] = UserModelSerializer(user, many=False).data
         return token
 
 

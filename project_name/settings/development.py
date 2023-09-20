@@ -1,6 +1,5 @@
 from .common import *
 import dj_database_url
-import os
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -10,6 +9,7 @@ SECRET_KEY = 'p3gm=o9o+_r(5*o$$kn#h*8#n1r)aquf^^nm_v5u0pn^qa$=4*'
 DEBUG = True
 ALLOWED_HOSTS = [ "http://0.0.0.0:8000/" , '*']
 CSRF_TRUSTED_ORIGINS = ["http://0.0.0.0:8000"]
+
 PASSWORD_RESET_EXPIRE_DAYS = 1
 
 
@@ -53,6 +53,7 @@ else:
             'PORT': 5432,
         }
     }
+
 
 EMAIL_HOST = os.environ.setdefault('EMAIL_HOST', '')
 EMAIL_PORT = os.environ.setdefault('EMAIL_PORT', '')

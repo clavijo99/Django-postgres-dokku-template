@@ -3,6 +3,7 @@ ENV PYTHONUNBUFFERED=1
 
 RUN apt-get update --yes --quiet && apt-get install --yes --quiet --no-install-recommends \
         python-psycopg2 \
+    vim \
  && rm -rf /var/lib/apt/lists/*
 
 # Setup workdir
