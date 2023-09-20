@@ -45,7 +45,7 @@ DEPENDENCIES_APPS = [
 
 PROJECT_APPS = [
     'main',
-    'user',
+    'users',
 ]
 
 ADDONS = [
@@ -233,6 +233,6 @@ SERVER_EMAIL = 'Server <server@project_name.com>'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
-AUTH_USER_MODEL = 'user.user'
+AUTH_USER_MODEL = 'users.user'
 
 
