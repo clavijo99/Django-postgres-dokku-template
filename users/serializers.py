@@ -4,7 +4,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
-from users.models import User
+from users.models import User, CodeRecoverPassword
 from django.utils.translation import gettext_lazy as _
 from django.contrib.sites.models import Site
 
@@ -93,21 +93,24 @@ class ResetPasswordRequestSerializer(serializers.Serializer):  # noqa
     email = serializers.EmailField(required=True)
 
 
-class ResetPasswordSerializer(serializers.Serializer):  # noqa
-    token = serializers.CharField(required=True)
-    password = serializers.CharField(required=True)
+class ResetPasswordCodeRequestSerializer(serializers.Serializer):
+    class Meta:
+        model = CodeRecoverPassword
+        fields = ('code', 'created','expiration')
 
-    def validate(self, data):
-        token = data.get('token')
-        password = data.get('password')
-        if not token:
-            raise serializers.ValidationError(
-                _('El campo "token" es obligatorio.'))
-        if not password:
-            raise serializers.ValidationError(
-                _('El campo "password" es obligatorio.'))
-        return data
+class ResetPasswordCodeValidateResponse(serializers.Serializer):
+    detail = serializers.CharField()
+    token = serializers.CharField()
 
+
+
+class ResetPasswordCodeValidateRequestSerializer(serializers.Serializer):
+    code = serializers.IntegerField(required=True)
+    email = serializers.EmailField(required=True)
+
+class ResetPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField()
+    token = serializers.CharField()
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):  # noqa
     @classmethod

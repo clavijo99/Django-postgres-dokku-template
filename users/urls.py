@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework import routers
 from .api import UserDetailAPIView, CurrentUserAPIView, CustomObtainTokenPairWithView, \
-    RegisterAPIView, LogoutAPIView, ResetPasswordRequestAPIView, CustomTokenRefreshView, \
+    RegisterAPIView, LogoutAPIView, ResetPasswordRequestAPIView, ResetPasswordCodeApiView, ResetPasswordCodeVerifyApiView, ResetPasswordApiView, CustomTokenRefreshView, \
     AvatarViewSet
 from users.views import activate_account, password_reset_confirm
 
@@ -14,7 +14,10 @@ api_urls = ([
     path("login/", CustomObtainTokenPairWithView.as_view(), name="account-login"),
     path("refresh/", CustomTokenRefreshView.as_view(), name="account-refresh-token"),
     path("register/", RegisterAPIView.as_view(), name="account-register"),
-    path("recover-password/", ResetPasswordRequestAPIView.as_view(), name="recover-password"),
+    path("recover-password-link/", ResetPasswordRequestAPIView.as_view(), name="recover-password"),
+    path("generate-code-recover-password/", ResetPasswordCodeApiView.as_view(), name="recover-password"),
+    path("validate-code/", ResetPasswordCodeVerifyApiView.as_view() , name="validate-code"),
+    path("recover-password", ResetPasswordApiView.as_view(), name="Recover password code"),
     path("account/<str:username>/", UserDetailAPIView.as_view(), name="get-account-detail"),
     path('', include(avatar_router.urls)),
 

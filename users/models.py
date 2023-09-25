@@ -53,9 +53,7 @@ class User(AbstractUser):
         return username
 
     def send_activation_email(self):
-        print('send email')
         if not self.is_active:
-            print('isnota')
             domain = Site.objects.get_current().domain
             activation_token = self.create_reset_token()
             activation_link = f"{domain}/account/activate_account_success/?reset_token={activation_token}"
@@ -64,14 +62,13 @@ class User(AbstractUser):
                 'first_name': self.first_name,
                 'activation_link': activation_link
             })
-            emails = send_mail(
+            send_mail(
                 subject, '',
                 settings.DEFAULT_FROM_EMAIL,
                 [self.email],
                 fail_silently=False,
                 html_message=html_message
             )
-            print("sendddddd")
 
     def create_reset_token(self): # noqa
         payload = {
@@ -119,3 +116,15 @@ class User(AbstractUser):
 def send_activation_email(sender, instance: User, created, **kwargs):
     if created:
         instance.send_activation_email()
+
+
+
+class CodeRecoverPassword(models.Model):
+    code = models.IntegerField(verbose_name=_('Codigo de seguridad'), null=False)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    created = models.DateTimeField(auto_created=True)
+    expiration = models.DateTimeField(verbose_name=_('tiempo de valido  del codigo'), null=False)
+
+    class Meta:
+        verbose_name = _('Codigo de seguridad restablecimiento de contraseña')
+        verbose_name_plural = _('Codigos de seguridad restablecimiento de contraseñas')

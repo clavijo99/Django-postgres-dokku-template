@@ -1,5 +1,14 @@
 import logging
-from django.utils.crypto import get_random_string
+import datetime
+from datetime import timedelta
+import jwt
+from django.contrib.auth import password_validation
+from django.contrib.auth.hashers import make_password
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from django.conf import settings
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from rest_framework import permissions, status, mixins, viewsets, parsers
 from django.shortcuts import get_object_or_404
@@ -12,9 +21,11 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.utils.translation import gettext_lazy as _
-from .models import User
+from .models import User, CodeRecoverPassword
 from .serializers import CustomTokenObtainPairSerializer, UserModelSerializer, RegisterSerializer, TokenOutput, \
-    LogoutSerializer, ResetPasswordSerializer, ResetPasswordRequestSerializer,  UserAvatarSerializer
+    LogoutSerializer, ResetPasswordRequestSerializer, ResetPasswordCodeValidateResponse, \
+    ResetPasswordCodeValidateRequestSerializer, ResetPasswordSerializer, UserAvatarSerializer
+from .views import generate_code
 from main.serializers import DefaultResponseSerializer
 
 logger = logging.getLogger(__name__)
@@ -101,6 +112,7 @@ class UserDetailAPIView(GenericAPIView):
             return Response({'detail': _('Usted no tiene permiso para eliminar este usuario')},
                             status.HTTP_400_BAD_REQUEST)
 
+
 @extend_schema(tags=['Usuario'])
 class AvatarViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin):
     permission_classes = [permissions.IsAuthenticated]
@@ -153,6 +165,7 @@ class AvatarViewSet(viewsets.GenericViewSet, mixins.DestroyModelMixin):
         except (TypeError, KeyError):
             return {}
 
+
 @extend_schema(tags=['Usuario'])
 class CurrentUserAPIView(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -177,7 +190,7 @@ class CurrentUserAPIView(GenericAPIView):
         return Response(current_user.data)
 
 
-@extend_schema(tags=['Autenticacion'])
+@extend_schema(tags=['authentication'])
 class RegisterAPIView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
 
@@ -207,37 +220,7 @@ class RegisterAPIView(GenericAPIView):
             return Response({'detail': exception_message}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema(tags=['Autenticacion'])
-class ResetPasswordRequestAPIView(GenericAPIView):
-    permission_classes = [permissions.AllowAny]
-    serializer_class = ResetPasswordRequestSerializer
-
-    @extend_schema(
-        summary=_("Recuperar Contraseña"),
-        description=_("Solicitar el cambio de contraseña"),
-        request=ResetPasswordRequestSerializer,
-        responses={
-            200: OpenApiResponse(description=_('Correo enviado'), response=DefaultResponseSerializer),
-            400: OpenApiResponse(description=_('Lo campos no son correctos'), response=DefaultResponseSerializer),
-            404: OpenApiResponse(description=_('Usuario no encontrado'), response=DefaultResponseSerializer)
-        },
-        methods=["post"]
-    )
-    def post(self, request, *args, **kwargs):
-        serializer = ResetPasswordRequestSerializer(data=request.data)
-        if serializer.is_valid(raise_exception=False):
-            email = serializer.validated_data['email']
-            try:
-                user = User.objects.get(email=email)
-                user.send_password_reset_email()
-                return Response({"detail": _("Correo enviado")}, status=status.HTTP_200_OK)
-            except User.DoesNotExist:
-                return Response({'detail': _('No existe un usuario con este correo')}, status=status.HTTP_404_NOT_FOUND)
-        else:
-            return Response({'detail': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-
-@extend_schema(tags=['Autenticacion'])
+@extend_schema(tags=['authentication'])
 class LogoutAPIView(APIView):
     serializer_class = LogoutSerializer
     permission_classes = [IsAuthenticated]
@@ -263,7 +246,7 @@ class LogoutAPIView(APIView):
             return Response({'error': e}, status=status.HTTP_400_BAD_REQUEST)
 
 
-@extend_schema(tags=['Autenticacion'])
+@extend_schema(tags=['authentication'])
 class CustomObtainTokenPairWithView(TokenObtainPairView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = CustomTokenObtainPairSerializer
@@ -278,7 +261,160 @@ class CustomObtainTokenPairWithView(TokenObtainPairView):
         return super().post(request, *args, **kwargs)
 
 
-@extend_schema(tags=['Autenticacion'], summary=_("Generar un nuevas credenciales de sesion"), description=_("Se generan nuevas credenciales de sesion con las credenciales anteriores"))
+@extend_schema(tags=['authentication'], summary=_("Generar un nuevas credenciales de sesion"),
+               description=_("Se generan nuevas credenciales de sesion con las credenciales anteriores"))
 class CustomTokenRefreshView(TokenRefreshView):
     pass
 
+
+@extend_schema(tags=['Recover-password'])
+class ResetPasswordRequestAPIView(GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ResetPasswordRequestSerializer
+
+    @extend_schema(
+        summary=_("Recuperar Contraseña desde el navegador"),
+        description=_("Se restablce la contraseña desde el navegador atravez de un correo"),
+        request=ResetPasswordRequestSerializer,
+        responses={
+            200: OpenApiResponse(description=_('Correo enviado'), response=DefaultResponseSerializer),
+            400: OpenApiResponse(description=_('Lo campos no son correctos'), response=DefaultResponseSerializer),
+            404: OpenApiResponse(description=_('Usuario no encontrado'), response=DefaultResponseSerializer)
+        },
+        methods=["post"]
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = ResetPasswordRequestSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=False):
+            email = serializer.validated_data['email']
+            try:
+                user = User.objects.get(email=email)
+                user.send_password_reset_email()
+                return Response({"detail": _("Correo enviado")}, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response({'detail': _('No existe un usuario con este correo')}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            return Response({'detail': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(tags=['Recover-password'])
+class ResetPasswordCodeApiView(APIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ResetPasswordRequestSerializer
+
+    @extend_schema(
+        summary=_("Generar codigo de seguridad para cambio de contraseña"),
+        description=_("Se genera un codigo de 6 digitos con el cual se puede restablecer la contraseña"),
+        request=ResetPasswordRequestSerializer,
+        methods=["post"],
+        responses={
+            200: OpenApiResponse(description=_('Correo enviado'), response=DefaultResponseSerializer),
+            400: OpenApiResponse(description=_('Lo campos no son correctos'), response=DefaultResponseSerializer),
+            404: OpenApiResponse(description=_('Usuario no encontrado'), response=DefaultResponseSerializer)
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        serializer = ResetPasswordRequestSerializer(data=request.data)
+        email = request.data['email']
+        if serializer.is_valid(raise_exception=False):
+            try:
+                user = User.objects.get(email=email)
+                code = generate_code()
+                expiration = timezone.now() + timedelta(minutes=30)
+                code_recovery = CodeRecoverPassword.objects.create(
+                    user_id=user,
+                    code=code,
+                    created=timezone.now(),
+                    expiration=expiration
+                )
+                if code_recovery.pk:
+                    subject = _("Restablecer Contraseña")
+                    html_message = render_to_string('emails/reset_password_code.html', {
+                        'code': code,
+                        'first_name': user.first_name,
+                    })
+                    send_email = send_mail(
+                        subject, '',
+                        settings.DEFAULT_FROM_EMAIL,
+                        [email],
+                        fail_silently=False,
+                        html_message=html_message)
+                    if send_email > 0:
+                        return Response({"detail": _("Correo enviado")}, status=status.HTTP_200_OK)
+                    else:
+                        return Response({'detail': _('No se logro enviar el correo')},
+                                        status=status.HTTP_404_NOT_FOUND)
+            except User.DoesNotExist:
+                return Response({'detail': _('No existe un usuario con este correo')}, status=status.HTTP_404_NOT_FOUND)
+
+        else:
+            return Response({'detail': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(tags=['Recover-password'])
+class ResetPasswordCodeVerifyApiView(APIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ResetPasswordCodeValidateRequestSerializer
+
+    @extend_schema(
+        summary=_("Validar Codigo de seguridad para restablecer contraseña"),
+        description=_("Se validad el codigo de seguridad del usuario validando si es correcto y no a caducado"),
+        request=ResetPasswordCodeValidateRequestSerializer,
+        responses={
+            200: OpenApiResponse(description=_('Codigo valido'), response=ResetPasswordCodeValidateResponse),
+            400: OpenApiResponse(description=_('Codigo caducado'), response=DefaultResponseSerializer),
+            404: OpenApiResponse(description=_('Codigo no valido'), response=DefaultResponseSerializer),
+        },
+    )
+    def post(self, request, *args, **kwargs):
+        try:
+            code_ = request.data['code']
+            email = request.data['email']
+            user = User.objects.get(email=email)
+            code = CodeRecoverPassword.objects.get(code=code_, user_id=user)
+            if code is not None:
+                if code.expiration > timezone.now():
+                    code.delete()
+                    payload = {
+                        'user_id': user.id,
+                        'exp': datetime.datetime.utcnow() + datetime.timedelta(
+                            days=settings.PASSWORD_RESET_EXPIRE_DAYS),
+                        'iat': datetime.datetime.utcnow(),
+                    }
+                    token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')
+                    return Response({'detail': 'Codigo valido', 'token': token}, status=status.HTTP_200_OK)
+                else:
+                    return Response({'detail': 'El codigo a caducado'}, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response({'detail': 'El correo es invalido'}, status=status.HTTP_400_BAD_REQUEST)
+        except CodeRecoverPassword.DoesNotExist:
+            return Response({'detail': 'Codigo invalido'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(tags=["Recover-password"])
+class ResetPasswordApiView(APIView):
+    serializer_class = ResetPasswordSerializer
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        summary=_("Cambio de contraseña atravez de codigo de seguridad"),
+        description=_("Se restablece la contraseña con un codigo de 6 digitos"),
+        request=ResetPasswordSerializer
+    )
+    def post(self, request, *args, **kwargs):
+        try:
+            payload = jwt.decode(request.data['token'], settings.SECRET_KEY, algorithms='HS256')
+            user = User.objects.get(id=payload['user_id'])
+            password_validation.validate_password(request.data['password'])
+            encrypted_password = make_password(request.data['password'])
+            user.password = encrypted_password
+            user.save()
+            return Response({'detail': 'El cambio de contraseña a sido exitoso!'})
+        except jwt.ExpiredSignatureError:
+            return Response({'detail': 'El token a caducado'})
+        except jwt.DecodeError:
+            return Response({'detail': 'Error del token de seguridad'})
+        except User.DoesNotExist:
+            return Response({'detail': 'El usuario no se encontro'})
+        except ValidationError as e:
+            return Response({'detal': 'La contraseña debe ser mayor a 8 caracteres y contener como minimo una letra'})

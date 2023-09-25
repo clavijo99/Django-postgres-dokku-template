@@ -1,7 +1,9 @@
 # views.py
+import random
+
 import jwt
 from django.conf import settings
-from users.models import User
+from users.models import User, CodeRecoverPassword
 from django.shortcuts import render
 from users.forms import UserPasswordResetForm
 
@@ -46,3 +48,13 @@ def password_reset_confirm(request):
         request, 'account/password_reset_confirm.html',
         {'form': UserPasswordResetForm(user)}
     )
+
+def generate_code():
+    code = random.randint(100000, 999999)
+    try:
+        code_validate = CodeRecoverPassword.objects.get(code=code)
+        generate_code()
+    except CodeRecoverPassword.DoesNotExist:
+        return code
+
+
